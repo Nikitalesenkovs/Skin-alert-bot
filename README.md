@@ -15,16 +15,19 @@ A lightweight asynchronous Python scanner that monitors CS2 skin marketplaces an
 ## Project Structure
 
 ```
-scanner/
-│
-├ adapters/
-│   └ example_market.py
-│
-├ cache.py
-├ config.py
-├ filters.py
-├ notifier.py
-└ main.py
+Skin-alert-bot/
+├── adapters/
+│   ├── __init__.py
+│   ├── csfloat.py
+│   ├── skinport.py
+│   └── waxpeer.py
+├── cache.py
+├── config.py
+├── filters.py
+├── main.py
+├── notifier.py
+├── requirements.txt
+└── README.md
 ```
 
 ## Requirements
