@@ -2,6 +2,7 @@ import asyncio
 from typing import Dict, Any
 
 from adapters.waxpeer import WaxpeerAdapter
+from adapters import skinport
 from filters import item_matches
 from notifier import send_telegram
 
@@ -9,7 +10,7 @@ seen_ids = set()
 
 
 async def process_item(item: Dict[str, Any]) -> None:
-    item_id = item["id"]
+    item_id = f"{item['source']}:{item['id']}"
 
     if item_id in seen_ids:
         return
@@ -32,9 +33,25 @@ async def process_item(item: Dict[str, Any]) -> None:
     await send_telegram(message)
 
 
+async def scan_skinport() -> None:
+    while True:
+        try:
+            items = await skinport.fetch()
+            for item in items:
+                await process_item(item)
+        except Exception as e:
+            print("[SKINPORT ERROR]", e)
+
+        await asyncio.sleep(5)
+
+
 async def main() -> None:
     waxpeer = WaxpeerAdapter(on_item_callback=process_item)
-    await waxpeer.start()
+
+    await asyncio.gather(
+        waxpeer.start(),
+        scan_skinport(),
+    )
 
 
 if __name__ == "__main__":
