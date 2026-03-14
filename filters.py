@@ -1,18 +1,21 @@
-import config
+from typing import Dict, Any
 
-def check_item(item):
+TARGET_COLLECTION = "Phoenix"
+FLOAT_MIN = 0.129
+FLOAT_MAX = 0.131
 
-    if item.get("collection") != config.TARGET_COLLECTION:
+
+def item_matches(item: Dict[str, Any]) -> bool:
+    collection = item.get("collection")
+    float_value = item.get("float")
+
+    if collection != TARGET_COLLECTION:
         return False
 
-    f = item.get("float")
-    if f is None:
+    if float_value is None:
         return False
 
-    if not (config.FLOAT_MIN <= f <= config.FLOAT_MAX):
-        return False
-
-    if item.get("price", 999999) > config.MAX_PRICE:
+    if not (FLOAT_MIN <= float_value <= FLOAT_MAX):
         return False
 
     return True
