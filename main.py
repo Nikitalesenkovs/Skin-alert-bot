@@ -1,57 +1,41 @@
 import asyncio
-import config
-from filters import check_item
-from notifier import send
-from cache import is_seen, mark_seen
+from typing import Dict, Any
 
-from adapters import site1
+from adapters.waxpeer import WaxpeerAdapter
+from filters import item_matches
+from notifier import send_telegram
 
-
-async def scan(name, adapter):
-
-    while True:
-
-        try:
-
-            items = await adapter.fetch()
-
-            for item in items:
-
-                if is_seen(item["id"]):
-                    continue
-
-                mark_seen(item["id"])
-
-                if check_item(item):
-
-                    msg = (
-                        f"Found item\n"
-                        f"Market: {name}\n"
-                        f"Name: {item['name']}\n"
-                        f"Float: {item['float']}\n"
-                        f"Price: {item['price']}"
-                    )
-
-                    print(msg)
-
-                    await send(msg)
-
-        except Exception as e:
-
-            print(name, "error:", e)
-
-        await asyncio.sleep(config.SCAN_INTERVAL)
+seen_ids = set()
 
 
-async def main():
+async def process_item(item: Dict[str, Any]) -> None:
+    item_id = item["id"]
 
-    tasks = [
+    if item_id in seen_ids:
+        return
 
-        asyncio.create_task(scan("SITE1", site1)),
+    seen_ids.add(item_id)
 
-    ]
+    if not item_matches(item):
+        return
 
-    await asyncio.gather(*tasks)
+    message = (
+        f"Matching item found\n"
+        f"Source: {item['source']}\n"
+        f"Name: {item['name']}\n"
+        f"Float: {item.get('float')}\n"
+        f"Price: {item.get('price')}\n"
+        f"Collection: {item.get('collection')}"
+    )
+
+    print(message)
+    await send_telegram(message)
 
 
-asyncio.run(main())
+async def main() -> None:
+    waxpeer = WaxpeerAdapter(on_item_callback=process_item)
+    await waxpeer.start()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
