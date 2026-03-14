@@ -1,4 +1,3 @@
-import asyncio
 import socketio
 from typing import Any, Callable, Dict, Optional
 
