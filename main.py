@@ -2,8 +2,8 @@ import asyncio
 from typing import Dict, Any
 
 from adapters.waxpeer import WaxpeerAdapter
-from adapters import skinport
-from filters import item_matches
+from adapters import skinport, csfloat
+from filters import item_matches, FLOAT_MIN, FLOAT_MAX, TARGET_COLLECTION
 from notifier import send_telegram
 
 seen_ids = set()
@@ -45,12 +45,31 @@ async def scan_skinport() -> None:
         await asyncio.sleep(5)
 
 
+async def scan_csfloat() -> None:
+    while True:
+        try:
+            items = await csfloat.fetch(
+                min_float=FLOAT_MIN,
+                max_float=FLOAT_MAX,
+                collection=TARGET_COLLECTION,
+                limit=50,
+                sort_by="most_recent",
+            )
+            for item in items:
+                await process_item(item)
+        except Exception as e:
+            print("[CSFLOAT ERROR]", e)
+
+        await asyncio.sleep(5)
+
+
 async def main() -> None:
     waxpeer = WaxpeerAdapter(on_item_callback=process_item)
 
     await asyncio.gather(
         waxpeer.start(),
         scan_skinport(),
+        scan_csfloat(),
     )
 
 
