@@ -1,11 +1,9 @@
 import aiohttp
-
-BOT_TOKEN = "tut nuzhen token"
-CHAT_ID = "i tut nuzhen token"
+from config import TELEGRAM_TOKEN, CHAT_ID
 
 
 async def send_telegram(message: str) -> None:
-    url = f"https://api.telegram.org/bot{token bota}/sendMessage"
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
 
     async with aiohttp.ClientSession() as session:
         async with session.post(
