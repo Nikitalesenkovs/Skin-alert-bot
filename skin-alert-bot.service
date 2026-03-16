@@ -1,0 +1,14 @@
+[Unit]
+Description=CS2 Skin Alert Bot
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/root/Skin-alert-bot
+EnvironmentFile=/root/Skin-alert-bot/.env
+ExecStart=/root/Skin-alert-bot/venv/bin/python /root/Skin-alert-bot/main.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
