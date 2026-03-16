@@ -21,13 +21,19 @@ Skin-alert-bot/
 │   ├── csfloat.py
 │   ├── skinport.py
 │   └── waxpeer.py
+├── data/
+├── .env.example
+├── .gitignore
+├── Dockerfile
+├── README.md
 ├── cache.py
 ├── config.py
+├── docker-compose.yml
 ├── filters.py
 ├── main.py
 ├── notifier.py
 ├── requirements.txt
-└── README.md
+└── skin-alert-bot.service
 ```
 
 ## Requirements
