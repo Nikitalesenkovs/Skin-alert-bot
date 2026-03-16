@@ -1,25 +1,32 @@
 import asyncio
+import logging
 from typing import Dict, Any
 
 from adapters.waxpeer import WaxpeerAdapter
 from adapters import skinport, csfloat
 from filters import item_matches
 from notifier import send_telegram
-from config import SCAN_INTERVAL
+from config import SCAN_INTERVAL, LOG_LEVEL, FLOAT_MIN, FLOAT_MAX, TARGET_COLLECTION, MAX_PRICE
+from cache import is_seen, mark_seen, load_seen_items
 
-seen_ids = set()
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL, logging.INFO),
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+)
+
+logger = logging.getLogger(__name__)
 
 
 async def process_item(item: Dict[str, Any]) -> None:
     item_id = f"{item['source']}:{item['id']}"
 
-    if item_id in seen_ids:
+    if is_seen(item_id):
         return
-
-    seen_ids.add(item_id)
 
     if not item_matches(item):
         return
+
+    mark_seen(item_id)
 
     message = (
         f"Matching item found\n"
@@ -30,7 +37,7 @@ async def process_item(item: Dict[str, Any]) -> None:
         f"Collection: {item.get('collection')}"
     )
 
-    print(message)
+    logger.info("Matched item: %s", message.replace("\n", " | "))
     await send_telegram(message)
 
 
@@ -41,7 +48,7 @@ async def scan_skinport() -> None:
             for item in items:
                 await process_item(item)
         except Exception as e:
-            print("[SKINPORT ERROR]", e)
+            logger.exception("Skinport scan error: %s", e)
 
         await asyncio.sleep(SCAN_INTERVAL)
 
@@ -49,16 +56,24 @@ async def scan_skinport() -> None:
 async def scan_csfloat() -> None:
     while True:
         try:
-            items = await csfloat.fetch()
+            items = await csfloat.fetch(
+                min_float=FLOAT_MIN,
+                max_float=FLOAT_MAX,
+                collection=TARGET_COLLECTION,
+                max_price=int(MAX_PRICE * 100),
+                limit=50,
+                sort_by="most_recent",
+            )
             for item in items:
                 await process_item(item)
         except Exception as e:
-            print("[CSFLOAT ERROR]", e)
+            logger.exception("CSFloat scan error: %s", e)
 
         await asyncio.sleep(SCAN_INTERVAL)
 
 
 async def main() -> None:
+    load_seen_items()
     waxpeer = WaxpeerAdapter(on_item_callback=process_item)
 
     await asyncio.gather(
